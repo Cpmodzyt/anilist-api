@@ -48,10 +48,11 @@ uvicorn app:app --host 0.0.0.0 --port 8000
 # health: http://localhost:8000/health
 ```
 
-Or with Docker (if you add one):
+Or with Docker:
 ```bash
 docker build -t anilist-api .
-docker run -p 8000:8000 anilist-api
+docker run -p 8000:8000 -e PORT=8000 anilist-api
+# health: http://localhost:8000/health
 ```
 
 ### 2. GraphQL passthrough (EXACT original AniList style)
@@ -125,12 +126,38 @@ recommendations/stats/nextAiringEpisode + `bannerAnilistSt`, `durationText`,
 | GET | `/banner/{id}` | 302 → `https://img.anili.st/media/{id}` |
 | GET | `/health`, `/` | Status / index |
 
+## Deploy (Koyeb / Vercel / Render / Railway / Heroku / Docker / any web host)
+
+No API keys needed. The server reads `$PORT` (injected by all these platforms).
+
+| Platform | How |
+|---|---|
+| **Koyeb** | New Service → deploy `Cpmodzyt/anilist-api` via `Dockerfile` (or import `koyeb.yaml`). Health check path `/`. |
+| **Vercel** | Import repo → deploy. Routed via `vercel.json` → `api/index.py` (serverless). Note: cold starts refetch the token (~1 s); Hobby functions time out after 10 s — normal queries take 1–4 s. |
+| **Render** | New Web Service → use `render.yaml` (or build `pip install -r requirements.txt`, start `uvicorn app:app --host 0.0.0.0 --port $PORT`, health path `/health`). |
+| **Railway / Heroku** | Deploy repo → auto-detected `Procfile` (`web: uvicorn ... --port $PORT`) + `runtime.txt`. |
+| **Fly.io / Northflank / self-host** | `fly launch` with the `Dockerfile`, or `docker build/run` as above. |
+| **Local** | `bash run.sh` (uses `$PORT` or 8000). |
+
+Env vars:
+
+| Var | Required | Default | Purpose |
+|---|---|---|---|
+| `PORT` | No (hosts set it) | `8000` | Listen port |
+
 ## Project structure
 
 ```
 anilist-api/
 ├── app.py            # FastAPI server (REST + GraphQL passthrough)
 ├── client.py         # anilist.co scraper + Cloudflare bypass + queries
+├── api/index.py      # Vercel serverless entrypoint (same app)
+├── Dockerfile        # Koyeb / Render / Railway / Fly / self-host
+├── koyeb.yaml        # Koyeb one-click service
+├── render.yaml       # Render one-click service
+├── Procfile          # Heroku / Railway / Render
+├── runtime.txt       # Python version pin
+├── vercel.json       # Vercel routing
 ├── requirements.txt
 ├── run.sh
 └── README.md

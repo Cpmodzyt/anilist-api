@@ -42,7 +42,7 @@ from client import (
     anilist_st_banner,
 )
 
-app = FastAPI(title="Custom AniList API (anilist.co scraper)", version="1.0.0")
+app = FastAPI(title="Custom AniList API (anilist.co scraper)", version="1.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -409,5 +409,9 @@ def banner(aid: int):
 
 
 if __name__ == "__main__":
+    import os
+
     import uvicorn
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=False)
+
+    # $PORT is injected by Koyeb / Render / Railway / Heroku / Fly.io / etc.
+    uvicorn.run("app:app", host="0.0.0.0", port=int(os.getenv("PORT", "8000")), reload=False)

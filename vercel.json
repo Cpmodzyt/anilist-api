@@ -1,0 +1,4 @@
+{
+  "$schema": "https://api.vercel.com/schemas/vercel.json",
+  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }]
+}

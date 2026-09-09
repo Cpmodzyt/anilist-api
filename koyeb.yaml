@@ -1,0 +1,19 @@
+name: anilist-api
+services:
+  - name: api
+    git:
+      repository: Cpmodzyt/anilist-api
+      branch: main
+    docker:
+      dockerfile: Dockerfile
+    ports:
+      - port: 8000
+        http: "/"
+    instance_types:
+      - memory: 512
+        cpu: 1
+    scaling:
+      min: 1
+      max: 1
+    regions:
+      - fra
