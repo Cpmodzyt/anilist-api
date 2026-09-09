@@ -8,7 +8,10 @@ services:
       dockerfile: Dockerfile
     ports:
       - port: 8000
-        http: "/"
+        http: "/health"
+    env:
+      - key: API_KEY
+        value: ${API_KEY}
     instance_types:
       - memory: 512
         cpu: 1

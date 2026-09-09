@@ -132,11 +132,11 @@ No API keys needed. The server reads `$PORT` (injected by all these platforms).
 
 | Platform | How |
 |---|---|
-| **Koyeb** | New Service → deploy `Cpmodzyt/anilist-api` via `Dockerfile` (or import `koyeb.yaml`). Health check path `/`. |
-| **Vercel** | Import repo → deploy. Routed via `vercel.json` → `api/index.py` (serverless). Note: cold starts refetch the token (~1 s); Hobby functions time out after 10 s — normal queries take 1–4 s. |
-| **Render** | New Web Service → use `render.yaml` (or build `pip install -r requirements.txt`, start `uvicorn app:app --host 0.0.0.0 --port $PORT`, health path `/health`). |
-| **Railway / Heroku** | Deploy repo → auto-detected `Procfile` (`web: uvicorn ... --port $PORT`) + `runtime.txt`. |
-| **Fly.io / Northflank / self-host** | `fly launch` with the `Dockerfile`, or `docker build/run` as above. |
+| **Koyeb** | New Service → deploy `Cpmodzyt/anilist-api` via `Dockerfile` (or import `koyeb.yaml`). Health check path `/health`. Set `API_KEY` in service Environment for key auth. |
+| **Vercel** | Import repo → deploy. Set `API_KEY` env in project settings, then send `x-api-key` / `Bearer` on every request. Routed via `vercel.json` → `api/index.py` (serverless). Note: cold starts refetch the token (~1 s); Hobby functions time out after 10 s — normal queries take 1–4 s. |
+| **Render** | New Web Service → use `render.yaml` (prompts for `API_KEY`) — or build `pip install -r requirements.txt`, start `uvicorn app:app --host 0.0.0.0 --port $PORT`, health path `/health`, add `API_KEY` env to require a key. |
+| **Railway / Heroku** | Deploy repo → auto-detected `Procfile` (`web: uvicorn ... --port $PORT`) + `runtime.txt`. Add `API_KEY` in Variables/Config Vars for key auth. |
+| **Fly.io / Northflank / self-host** | `fly launch` with the `Dockerfile`, or `docker build/run` as above (pass `-e API_KEY=...` to require a key). |
 | **Local** | `bash run.sh` (uses `$PORT` or 8000). |
 
 Env vars:
@@ -144,6 +144,20 @@ Env vars:
 | Var | Required | Default | Purpose |
 |---|---|---|---|
 | `PORT` | No (hosts set it) | `8000` | Listen port |
+| `API_KEY` | No | _(empty = open)_ | If set, **every request** (except `/health` + docs) must send `x-api-key: <key>` **or** `Authorization: Bearer <key>`, else `401`. Set it in Vercel/Koyeb/Render dashboard. |
+
+### API key auth (Vercel-style)
+
+```bash
+# host env:  API_KEY=your-secret-key
+# every request sends one of:
+curl -H 'x-api-key: your-secret-key' 'https://your-app.vercel.app/anime/21519'
+curl -H 'Authorization: Bearer your-secret-key' -X POST https://your-app.vercel.app/ \
+ -H 'Content-Type: application/json' \
+ -d '{"query":"query($id:Int){Media(id:$id){id title{romaji}}}","variables":{"id":21519}}'
+# no/wrong key -> 401 {"detail": "Invalid or missing API key..."}
+# GET /health stays open (platform health checks can't send headers)
+```
 
 ## Project structure
 

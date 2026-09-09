@@ -22,6 +22,8 @@ REST convenience (same field names as AniList, plus `bannerAnilistSt`):
 """
 from __future__ import annotations
 
+import hmac
+import os
 import time
 from typing import Any, Dict, List, Optional
 
@@ -29,6 +31,7 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from client import (
     AIRING_QUERY,
@@ -42,13 +45,38 @@ from client import (
     anilist_st_banner,
 )
 
-app = FastAPI(title="Custom AniList API (anilist.co scraper)", version="1.1.0")
+app = FastAPI(title="Custom AniList API (anilist.co scraper)", version="1.2.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- Optional API key auth (Vercel-style) ---
+# Set API_KEY env on the host; then every request (except /health + docs)
+# must send `x-api-key: <key>` OR `Authorization: Bearer <key>`.
+# Unset/empty = open API (default, backward compatible).
+API_KEY = os.getenv("API_KEY", "")
+AUTH_EXEMPT = {"/health", "/docs", "/openapi.json", "/redoc"}
+
+
+class ApiKeyMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if API_KEY and request.url.path not in AUTH_EXEMPT:
+            provided = request.headers.get("x-api-key", "") or ""
+            auth = request.headers.get("authorization", "") or ""
+            if auth.lower().startswith("bearer "):
+                provided = provided or auth[7:].strip()
+            if not provided or not hmac.compare_digest(provided, API_KEY):
+                return JSONResponse(
+                    {"detail": "Invalid or missing API key. Send 'x-api-key' header or 'Authorization: Bearer <key>'."},
+                    status_code=401,
+                )
+        return await call_next(request)
+
+
+app.add_middleware(ApiKeyMiddleware)
 
 client = AniListClient()
 
