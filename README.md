@@ -1,6 +1,6 @@
 # anilist-api — Custom AniList API (anilist.co scraper)
 
-> Created by **Itzmecp** — https://t.me/itzmecp
+> Created by [**Itzmecp**](https://t.me/itzmecp)
 
 ## What's that?
 
@@ -40,7 +40,7 @@ characters/staff/reviews/stats/relations.
 ### 1. Install & run
 
 ```bash
-git clone https://github.com/Itzmecp/anilist-api.git
+git clone https://github.com/Cpmodzyt/anilist-api.git
 cd anilist-api
 pip install -r requirements.txt
 uvicorn app:app --host 0.0.0.0 --port 8000
@@ -145,7 +145,7 @@ anilist-api/
 
 ## Credits
 
-- Created by **Itzmecp** — https://t.me/itzmecp
+- Created by [**Itzmecp**](https://t.me/itzmecp)
 - Data source: https://anilist.co (scraped, Cloudflare bypass via `curl_cffi`)
 - Banners: `https://img.anili.st/media/{aid}`
 - Not affiliated with AniList.
