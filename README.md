@@ -37,6 +37,11 @@ characters/staff/reviews/stats/relations.
 
 ## How to use
 
+> `BASE` below = your host (`http://localhost:8000` locally, or your
+> Koyeb/Vercel/Render URL when deployed). If the host sets `API_KEY`,
+> add `-H 'x-api-key: <key>'` (or `Authorization: Bearer <key>`) to every
+> call except `GET /health` — see [API key auth](#api-key-auth-vercel-style).
+
 ### 1. Install & run
 
 ```bash
@@ -110,25 +115,28 @@ recommendations/stats/nextAiringEpisode + `bannerAnilistSt`, `durationText`,
 
 ### 4. Endpoints summary
 
-| Method | Path | Description |
-|---|---|---|
-| POST | `/`, `/graphql` | GraphQL passthrough (original AniList style) |
-| GET | `/search/anime?q=&page=&perPage=` | Search anime |
-| GET | `/search/manga?q=&page=&perPage=` | Search manga |
-| GET | `/anime/{id}` | Full anime info |
-| GET | `/manga/{id}` | Full manga info |
-| GET | `/media/{id}` | Anime→Manga fallback |
-| GET | `/airing?page=&perPage=` | Upcoming airing episodes |
-| GET | `/schedule?days=7` | Weekly schedule + `scheduleByDay` |
-| GET | `/character/{id}` | Character info |
-| GET | `/staff/{id}` | Staff info |
-| GET | `/studio/{id}` | Studio info |
-| GET | `/banner/{id}` | 302 → `https://img.anili.st/media/{id}` |
-| GET | `/health`, `/` | Status / index |
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/`, `/graphql` | 🔑 | GraphQL passthrough (original AniList style) |
+| GET | `/search/anime?q=&page=&perPage=` | 🔑 | Search anime |
+| GET | `/search/manga?q=&page=&perPage=` | 🔑 | Search manga |
+| GET | `/anime/{id}` | 🔑 | Full anime info |
+| GET | `/manga/{id}` | 🔑 | Full manga info |
+| GET | `/media/{id}` | 🔑 | Anime→Manga fallback |
+| GET | `/airing?page=&perPage=` | 🔑 | Upcoming airing episodes |
+| GET | `/schedule?days=7` | 🔑 | Weekly schedule + `scheduleByDay` |
+| GET | `/character/{id}` | 🔑 | Character info |
+| GET | `/staff/{id}` | 🔑 | Staff info |
+| GET | `/studio/{id}` | 🔑 | Studio info |
+| GET | `/banner/{id}` | 🔑 | 302 → `https://img.anili.st/media/{id}` |
+| GET | `/health` | open | Status (platform health checks) |
+| GET | `/` | 🔑 | Index |
+
+🔑 = requires key header **only if** the host sets `API_KEY` (otherwise open).
 
 ## Deploy (Koyeb / Vercel / Render / Railway / Heroku / Docker / any web host)
 
-No API keys needed. The server reads `$PORT` (injected by all these platforms).
+Open API by default. Set `API_KEY` on the host to require a key. The server reads `$PORT` (injected by all these platforms).
 
 | Platform | How |
 |---|---|
@@ -157,6 +165,15 @@ curl -H 'Authorization: Bearer your-secret-key' -X POST https://your-app.vercel.
  -d '{"query":"query($id:Int){Media(id:$id){id title{romaji}}}","variables":{"id":21519}}'
 # no/wrong key -> 401 {"detail": "Invalid or missing API key..."}
 # GET /health stays open (platform health checks can't send headers)
+```
+
+Python:
+```python
+import requests
+BASE = "https://your-app.vercel.app"  # or http://localhost:8000
+HEADERS = {"x-api-key": "your-secret-key"}  # omit if host has no API_KEY
+r = requests.get(f"{BASE}/anime/21519", headers=HEADERS)
+print(r.json())
 ```
 
 ## Project structure
